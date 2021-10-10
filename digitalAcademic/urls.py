@@ -17,10 +17,8 @@ Including another URLconf
 """ This is file urls project """
 
 # Library Django
-from django import urls
 from django.contrib import admin
 from django.urls import path
-from django.urls.conf import include
 
 
 urlpatterns = [
