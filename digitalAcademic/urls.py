@@ -20,7 +20,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+#Apps
+from request import views as requets_views
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('request/data_mainsection', requets_views.get_data_group, name='data_mainSection'),
+    path('request/data_sections', requets_views.get_data_section, name='data_Section'),
+    # path('request/component_sections', requets_views.get_data_component_action, name='component_Section'),
 ]

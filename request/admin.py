@@ -8,7 +8,7 @@ from django.forms import formsets
 from django.forms.fields import TypedChoiceField
 
 # Local
-from request.models import CategoryService, CommunicationChannel, ComponentAction, ComponentMainForm, ComponentSubsection, ComponentType, ConfigVariable, DataSource, DataSourceValue, Entity, FooterWeb, Letter, LetterService, MainFormSection, MainSection, Priority, Service, ServiceConfiguration, ServiceConfigurationStatus, Status, Subsection, subsectionServiceForm
+from request.models import CategoryService, CommunicationChannel, ComponentMainForm, ComponentSubsection, ComponentType, ConfigVariable, DataSource, DataSourceValue, Entity, FooterWeb, Letter, LetterService, MainFormSection, MainSection, Priority, RequestBody, RequestHeader, RequestHistory, Service, ServiceConfiguration, ServiceConfigurationStatus, Status, Subsection, subsectionServiceForm
 
 # Register your models here.
 @admin.register(CategoryService)
@@ -328,9 +328,12 @@ class SubsectionAdmin(admin.ModelAdmin):
     'description',
   )
 
+
   fieldsets = (
     ('Datos principales', {
-      'fields': ('description',)
+      'fields': (
+        ('description',),
+        'key_config'),
     }),
     ('Metadata', {
       'fields':(
@@ -341,7 +344,7 @@ class SubsectionAdmin(admin.ModelAdmin):
     }),
   )
 
-  readonly_fields = ('created_at','modified_at','user_id')
+  readonly_fields = ('created_at','modified_at','user_id','key_config')
 
   def save_model(self, request, obj, form, change) -> None:
       obj.user_id = request.user.username
@@ -568,6 +571,7 @@ class MainFormSectionTabAdmin(admin.ModelAdmin):
     'working_hours',
     'is_active',
     'is_payment',
+    'is_form_active',
   )
 
   list_display_links = (
@@ -594,8 +598,16 @@ class MainFormSectionTabAdmin(admin.ModelAdmin):
        ('service_id', 'role_id'),
        ('population_filter_api',),
        ('start_date', 'end_date'),
-       ('delivery_days','bussiness_days',),
-       ('working_hours', 'is_active', 'is_payment',),
+       ('delivery_days',),
+       ('is_active',
+        'is_form_active',
+        'is_autenticado',
+        'valid_user',
+       ),
+       ('bussiness_days',
+        'working_hours', 
+        'is_payment',),
+       ('url_form',),
        ('days_validity_document', 'digital_document', 'physical_document',),
        ('generation_process','cost_of_service',),
        ('comments',),
@@ -641,6 +653,12 @@ class ComponentSubsectionAdminInline(admin.TabularInline):
   fk_name = 'rule_subsection'
   extra = 1
 
+""" @admin.register(ComponentSubsection) 
+class ComponentSubsection_(admin.ModelAdmin):
+  list_display = (
+    'description',
+    'component_action') """
+
 @admin.register(subsectionServiceForm)
 class rule_subsetionTabAdmin(admin.ModelAdmin):
 
@@ -663,63 +681,71 @@ class rule_subsetionTabAdmin(admin.ModelAdmin):
     'section_main_form',
   )
 
+  readonly_fields = ('rule_service',
+    'subsection_service',
+    'section_main_form',
+    'is_active',
+    'order_display',
+  )
+
   inlines = [
     ComponentSubsectionAdminInline,
+    
   ]
 
-class ComponentMainFormAdminInline(admin.TabularInline):
+# class ComponentMainFormAdminInline(admin.TabularInline):
 
-  model =  ComponentMainForm
-  fk_name = 'rule_main_form'
-  extra = 1
+#   model =  ComponentMainForm
+#   fk_name = 'rule_main_form'
+#   extra = 1
 
-@admin.register(MainFormSection)
-class ComponentMainFormAdmin(admin.ModelAdmin):
+# # @admin.register(MainFormSection)
+# class ComponentMainFormAdmin(admin.ModelAdmin):
 
-  list_display = (
-    'rule_service',
-    'main_section',
-    'is_active',
-    'order_display'
-  )
+#   list_display = (
+#     'rule_service',
+#     'main_section',
+#     'is_active',
+#     'order_display'
+#   )
 
-  list_display_links = (
-    'rule_service',
-    'main_section',
-    'is_active'
-  )
-  search_fields = (
-    'rule_service',
-    'main_section',
-  )
+#   list_display_links = (
+#     'rule_service',
+#     'main_section',
+#     'is_active'
+#   )
+#   search_fields = (
+#     'rule_service',
+#     'main_section',
+#   )
 
-  inlines = [
-    ComponentMainFormAdminInline,
-  ]
+#   inlines = [
+#     ComponentMainFormAdminInline,
+#   ]
 
-  fieldsets = (
-   ('Sección principal form', {
-     'fields': ('rule_service',
-      'main_section',
-      'is_active',
-      'order_display'
-     )
-   }),
-   ('Metadata', {
-     'fields':(
-       'user_id',
-       'created_at', 
-       'modified_at'
-     )
-   }),
-  )
+#   fieldsets = (
+#    ('Sección principal form', {
+#      'fields': ('rule_service',
+#       'main_section',
+#       'is_active',
+#       'order_display'
+#      )
+#    }),
+#    ('Metadata', {
+#      'fields':(
+#        'user_id',
+#        'created_at', 
+#        'modified_at'
+#      )
+#    }),
+#   )
 
-  readonly_fields = ('created_at','modified_at','user_id')
+#   readonly_fields = ('created_at','modified_at','user_id')
 
-  def save_model(self, request, obj, form, change) -> None:
+#   def save_model(self, request, obj, form, change) -> None:
 
-    obj.user_id = request.user.username
-    return super().save_model(request, obj, form, change)
+#     obj.user_id = request.user.username
+#     return super().save_model(request, obj, form, change)
 
 @admin.register(Priority)
 class PriorityAdmin(admin.ModelAdmin):
@@ -798,22 +824,75 @@ class StatusAdmin(admin.ModelAdmin):
     obj.user_id = request.user.username
     return super().save_model(request, obj, form, change)
 
-@admin.register(ComponentAction)
-class ComponentActionAdmin(admin.ModelAdmin):
+
+class RequestBodyAdminInline(admin.TabularInline):
+
+  model = RequestBody
+  fk_name = 'header_request_id'
+  extra = 1
+
+class RequestHistoryAdminInline(admin.TabularInline):
+  
+  model = RequestHistory
+  fk_name = 'header_request_id'
+  extra = 1
+
+@admin.register(RequestHeader)
+class RequestHeaderTabAdmin(admin.ModelAdmin):
+  
   list_display = (
-    'service_id',
-    'service_component_group_id',
-    'service_component_section_id',
+    'id_usuario',
+    'rule_service',
+    'service',
+    'status_service',
+    'estimated_date',
+    'document_type',
+    'reception_date',
+    'delivery_date'
   )
 
   list_display_links = (
-    'service_id',
-    'service_component_group_id',
-    'service_component_section_id',
+    'id_usuario',
+    'rule_service',
+    'service',
+    'status_service',
+    'estimated_date',
+    'document_type',
+    'reception_date',
+    'delivery_date',
   )
 
-  # def save_model(self, request, obj, form, change) -> None:
+  inlines = [
+    RequestBodyAdminInline,
+    RequestHistoryAdminInline,
+  ]
 
-  #   obj.user_id = request.user.username
-  #   return super().save_model(request, obj, form, change)
+  """ fieldsets = (
+   ('Reglas de servicio', {
+     'fields': (
+       ('service_id', 'role_id'),
+       ('population_filter_api',),
+       ('start_date', 'end_date'),
+       ('delivery_days',),
+       ('is_active',
+        'is_form_active',
+        'is_autenticado',
+        'valid_user',
+       ),
+       ('bussiness_days',
+        'working_hours', 
+        'is_payment',),
+       ('url_form',),
+       ('days_validity_document', 'digital_document', 'physical_document',),
+       ('generation_process','cost_of_service',),
+       ('comments',),
+     )
+   }),
+  ) """
 
+  # readonly_fields = ('created_at','modified_at','user_id')
+
+  def save_model(self, request, obj, form, change) -> None:
+
+    obj.user_id = request.user.username
+    return super().save_model(request, obj, form, change)
