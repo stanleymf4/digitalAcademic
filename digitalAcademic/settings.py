@@ -33,10 +33,13 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     # django APPS
+    # 'material',
+    # 'material.admin',
     'admin_interface',
     'colorfield',
     'ckeditor',
     'djmoney',
+    # 'bootstrap_admin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -77,6 +80,7 @@ TEMPLATES = [
     },
 ]
 
+# BOOTSTRAP_ADMIN_SIDEBAR_MENU = False
 WSGI_APPLICATION = 'digitalAcademic.wsgi.application'
 
 
@@ -139,6 +143,13 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
 
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
@@ -146,3 +157,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 SILENCED_SYSTEM_CHECKS = ['security.W019']
+
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',
+        'height': 300,
+        'width': 'auto',
+    },
+}

@@ -34,9 +34,8 @@ class Status(models.Model):
 
 class CategoryService(models.Model):
 
-  description = models.CharField('descripción', max_length=100)
+  description = models.CharField('descripción', max_length=100, unique=True)
   user_id = models.CharField('modificado por', max_length=50, blank=True)
-
   created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
   modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
 
@@ -44,13 +43,13 @@ class CategoryService(models.Model):
   # modelo para que aparezca en el adminPanel
   class Meta:
     verbose_name = 'categoria de servicio'
-    verbose_name_plural = 'categorias de servicios'
+    verbose_name_plural = 'categoria de servicios'
 
   def __str__(self):
     return f'{self.description}'
 
 class Entity(models.Model):
-  description = models.CharField('nombre entidad', max_length=150)
+  description = models.CharField('nombre entidad', max_length=150, unique=True)
   email = models.EmailField('correo electrónico', max_length=200)
   root_entity = models.ForeignKey(
     'self', 
@@ -65,8 +64,8 @@ class Entity(models.Model):
   modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
 
   class Meta:
-    verbose_name = 'entidad'
-    verbose_name_plural = 'entidades'
+    verbose_name = 'sede administrativa'
+    verbose_name_plural = 'sedes administrativas'
 
   def __str__(self) -> str:
       return f'{self.description}'
@@ -77,16 +76,18 @@ class Service(models.Model):
   category_service = models.ForeignKey(
     CategoryService, 
     on_delete=models.PROTECT, 
-    verbose_name='categoria de servicio'
+    verbose_name='categoría de servicio'
   )
+
   entity = models.ForeignKey(
     Entity, 
     on_delete=models.PROTECT, 
     null=True, 
     blank=True, 
-    verbose_name='entidad prestadora'
+    verbose_name='sede administrativa'
   )
-  description = models.CharField('descripción', max_length=100)
+
+  description = models.CharField('descripción', max_length=100,)
   web_indicator = models.BooleanField('indicador web', default=False)
   user_id = models.CharField('modificado por', max_length=50, blank=True)
   created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
@@ -95,20 +96,22 @@ class Service(models.Model):
   class Meta:
     verbose_name = 'servicio'
     verbose_name_plural = 'servicios'
+    unique_together = [['description', 'category_service', 'entity']]
+    
 
   def __str__(self) -> str:
       return f'{self.description}'
 
 class Letter(models.Model):
-  description = models.CharField('descripción', max_length=100)
+  description = models.CharField('descripción', max_length=100, unique=True)
   letter_text = RichTextField(verbose_name="contenido")
   user_id = models.CharField('modificado por', max_length=50, blank=True)
   created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
   modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
 
   class Meta:
-    verbose_name = 'Carta'
-    verbose_name_plural = 'Cartas'
+    verbose_name = 'Marco legal del servicio'
+    verbose_name_plural = 'Marco legal de servicios'
 
   def __str__(self) -> str:
       return f'{self.description}'
@@ -128,15 +131,14 @@ class LetterService(models.Model):
       (QUINTO,  'Quinto'),
   ]
 
-  description = models.CharField('descripción', max_length=100, null=True, blank=True)
-  service = models.ForeignKey(Service, on_delete=models.CASCADE, verbose_name='servicio')
-  letter = models.ForeignKey(Letter, on_delete=models.CASCADE, verbose_name='carta')
-  order_display = models.CharField(
-      'orden para mostrar', 
-      max_length=80, 
+  description = models.CharField('descripción', max_length=100, default=False)
+  service = models.ForeignKey(Service, on_delete=models.PROTECT, verbose_name='servicio')
+  letter = models.ForeignKey(Letter, on_delete=models.PROTECT, verbose_name='marco legal')
+  order_display = models.IntegerField(
+      'orden para mostrar',
       # null=False, 
       # blank=True,
-      choices=ORDER_DISPLAY,
+      # choices=ORDER_DISPLAY,
       # default=''
   )
   user_id = models.CharField('modificado por', max_length=50, blank=True)
@@ -144,22 +146,23 @@ class LetterService(models.Model):
   modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
 
   class Meta:
-    verbose_name = 'asociación de servicio y carta'
-    verbose_name_plural = 'asociar servicios y cartas'
+    verbose_name = 'servicio y marco legal'
+    verbose_name_plural = 'servicios y marco legal'
+    unique_together = [['service', 'letter']]
 
   def __str__(self) -> str:
       return f'{self.service.description} {self.letter.description}'
 
 class ComponentType(models.Model):
   
-  description = models.CharField('nombre de componente', max_length=150)
+  description = models.CharField('nombre de componente', max_length=150, unique=True)
   user_id = models.CharField('modificado por', max_length=50, blank=True)
   created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
   modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
 
   class Meta:
     verbose_name = 'tipo de componente'
-    verbose_name_plural = 'tipos de componentes'
+    verbose_name_plural = 'tipo de componentes'
 
   def __str__(self) -> str:
       return f'{self.description}'
@@ -182,7 +185,7 @@ class FooterWeb(models.Model):
       (HORIZONTAL, 'Horizontal'),
   ]
   
-  description = models.CharField('descripción', max_length=150)
+  description = models.CharField('descripción', max_length=150, unique=True)
 
   text_html = RichTextField(verbose_name='texto HTML')
 
@@ -208,19 +211,20 @@ class FooterWeb(models.Model):
     verbose_name = 'pie de pagina'
     verbose_name_plural = 'pies de paginas'
     db_table = 'request_footer_web'
+    unique_together = [['description', 'orientation','order_display']]
 
   def __str__(self) -> str:
     return f'{self.description}'
 
 class MainSection(models.Model):
-  description = models.CharField('descripción', max_length=250)
+  description = models.CharField('descripción', max_length=250, unique=True)
   user_id = models.CharField('modificado por', max_length=50, blank=True)
   created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
   modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
 
   class Meta:
-    verbose_name = 'sección principal'
-    verbose_name_plural = 'secciones principales'
+    verbose_name = 'sección principal de fomulario'
+    verbose_name_plural = 'sección principal de formularios'
     db_table = 'request_main_section'
 
   def __str__(self) -> str:
@@ -244,40 +248,28 @@ class ConfigVariable(models.Model):
     db_table = 'request_config_variable'
     unique_together = [['group_variable', 'code']]
 
-  """ def __str__(self) -> str:
-      return f'{self.description}'
-
-  def hola(self) -> tuple:
-    return (self.code, self.description)  """ 
+  def __str__(self) -> str:
+      return f'{self.group_variable} - {self.description}'
 
 class Subsection(models.Model):
 
-  description = models.CharField('descripción', max_length=250)
-  # key_config = models.CharField('key config', max_length=20, null=True)
+  description = models.CharField('descripción', max_length=250, unique=True)
   user_id = models.CharField('modificado por', max_length=50, blank=True)
   created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
   modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
 
-  def get_key_section_default()->list:
-    try:
-      key_head_section = ConfigVariable.objects.filter(code='HDSC', system_required=True)
-    except:
-      list_key_section = []
-    
-    list_key_section = [(key_head_section[i].code, key_head_section[i].description) for i in range(len(key_head_section))]
-    return sorted(list_key_section)
-
-  key_config = models.CharField(
-    'key config',
-    max_length=10,
-    choices=get_key_section_default(),
+  key_config = models.ForeignKey(
+    ConfigVariable,
+    on_delete=models.PROTECT, 
+    verbose_name='key config', 
     null=True,
-    blank=True
+    blank=True,
+    limit_choices_to={'group_variable': ('SECDF')}
   )
 
   class Meta:
-    verbose_name = 'subsección'
-    verbose_name_plural = 'subsecciones'
+    verbose_name = 'subsección de formulario'
+    verbose_name_plural = 'subsección de formularios'
     db_table = 'request_subsection'
 
   def __str__(self) -> str:
@@ -285,7 +277,7 @@ class Subsection(models.Model):
 
 class DataSource(models.Model):
 
-  source = models.CharField('Fuente de datos', max_length=150, blank=False)
+  source = models.CharField('Fuente de datos', max_length=150, blank=False, unique=True)
   related_source = models.ForeignKey(
     'self', 
     on_delete=models.PROTECT, 
@@ -294,6 +286,7 @@ class DataSource(models.Model):
     null=True,
     blank=True
   )
+  
   user_id = models.CharField('modificado por', max_length=50, blank=True)
   created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
   modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
@@ -305,30 +298,6 @@ class DataSource(models.Model):
 
   def __str__(self) -> str:
     return f'{self.source}' 
-
-class ConfigVariable(models.Model):
-
-  code = models.CharField('código', max_length=10)
-  description = models.CharField('descripción', max_length=150)
-  value = models.CharField('valor', max_length=20)
-  sequence = models.IntegerField('secuencia', default=1)
-  system_required = models.BooleanField('requerido por sistema', default=False)
-  group_variable = models.CharField('grupo de variables', max_length=10)
-  user_id = models.CharField('modificado por', max_length=50, blank=True)
-  created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
-  modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
-
-  class Meta:
-    verbose_name = 'variable de configuración'
-    verbose_name_plural = 'variables de configuración'
-    db_table = 'request_config_variable'
-    unique_together = [['group_variable', 'code']]
-
-  """ def __str__(self) -> str:
-      return f'{self.description}'
-
-  def hola(self) -> tuple:
-    return (self.code, self.description)  """ 
 
 class CommunicationChannel(models.Model):
 
@@ -351,36 +320,31 @@ class DataSourceValue(models.Model):
   source_data = models.ForeignKey(
     DataSource, 
     verbose_name='fuente de datos', 
-    on_delete=models.CASCADE, 
+    on_delete=models.PROTECT, 
     related_name="dataSourceValue"
   )
-
-  # from_source_data = models.ForeignKey(
-  #   DataSource, 
-  #   on_delete=models.CASCADE, 
-  #   related_name="from_dataSourceValue"
-  # )
   
-  code_data = models.CharField('código datos de la fuente', max_length=4)
-  value_data = models.CharField('valor datos de la fuente', max_length=100)
-  data_related = models.CharField('dato de fuente relacionada', max_length=4, null=True, blank=True)
-
-  # order_display = models.CharField(
-  #     'orden para mostrar', 
-  #     max_length=80, 
-  #     choices=ORDER_DISPLAY,
-  # )
-  # user_id = models.CharField('modificado por', max_length=50, blank=True)
-  # created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
-  # modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
+  code_data = models.CharField('código de lista de opciones', max_length=4, unique=True)
+  value_data = models.CharField('descripción de lista de opciones', max_length=100)
+  data_related = models.ForeignKey(
+    'self',
+    on_delete=models.PROTECT, 
+    to_field='code_data',
+    verbose_name='dato de fuente relacionada', 
+    null=True,
+    blank=True,
+    # limit_choices_to={'data_related': (source_data)}
+  )
 
   class Meta:
-    verbose_name = 'Valor de fuente de datos'
+    verbose_name = 'valor de fuente de dato'
     verbose_name_plural = 'valores de fuentes de datos'
     db_table = 'request_data_source_value'
+    unique_together = [['code_data', 'value_data', 'source_data']]
+    
 
   def __str__(self) -> str:
-    return f'{self.source_data}'
+    return f'{self.code_data} - {self.value_data}'
 
 class ServiceConfiguration(models.Model):
 
@@ -395,24 +359,32 @@ class ServiceConfiguration(models.Model):
     on_delete=models.PROTECT, 
     verbose_name='servicio'
   )
+
   role_id = models.ForeignKey(
     Group, 
     on_delete=models.PROTECT, 
     verbose_name='role de acceso', 
     null=True
   )
-  population_filter_api = models.CharField('filtro poblacional API', null=True, max_length=2000, blank=True)
+
+  population_filter_api = models.CharField(
+    'filtro poblacional API', 
+    null=True, 
+    max_length=2000, 
+    blank=True
+  )
+
   start_date = models.DateField('fecha de inicio', null=True)
   end_date = models.DateField('fecha fin', null=True)
-  delivery_days = models.IntegerField('dias de entrega', default=False)
+  delivery_days = models.IntegerField('días de entrega')
   bussiness_days = models.BooleanField('dias laborales', default=False)
   working_hours = models.BooleanField('horas laborales', default=False)
   is_active = models.BooleanField('activo', default=False)
   is_payment = models.BooleanField('requiere pago', default=False)
-  is_form_active = models.BooleanField('formulario activo', default=False)
-  url_form = models.URLField('url formulario', max_length=500, null=True)
+  is_form_active = models.BooleanField('formulario disponible', default=False)
+  url_form = models.URLField('url formulario', max_length=500, null=True, blank=True)
   is_autenticado = models.BooleanField('requiere autenticación', default=False)
-  valid_user = models.BooleanField('validacion de usuario', default=False)
+  valid_user = models.BooleanField('validación de usuario', default=False)
   
   generation_process = models.CharField(
     'Procesamiento',
@@ -434,15 +406,18 @@ class ServiceConfiguration(models.Model):
   digital_document = models.BooleanField('documento digital', default=False)
   physical_document = models.BooleanField('documento físico', default=False)
 
-  comments = RichTextField(verbose_name='comentarios del servicio')
+  # comments = RichTextField(
+  #   verbose_name='comentarios del servicio', 
+  # )
+  comments = models.TextField('comentarios del servicio', null=True, blank=True)
   related_status = models.ManyToManyField(Status, through='ServiceConfigurationStatus')
   user_id = models.CharField('modificado por', max_length=50, blank=True)
   created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
   modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
 
   class Meta:
-    verbose_name = 'regla del servicio'
-    verbose_name_plural = 'reglas del servicio'
+    verbose_name = 'regla de servicio'
+    verbose_name_plural = 'reglas de servicios'
     db_table = 'request_service_configuration'
 
   def __str__(self) -> str:
@@ -450,18 +425,18 @@ class ServiceConfiguration(models.Model):
 
 class MainFormSection(models.Model):
 
-  PRIMERO = '1'
-  SEGUNDO = '2'
-  TERCERO = '3'
-  CUARTO = '4'
-  QUINTO = '5'
-  ORDER_DISPLAY = [
-      (PRIMERO, 'Primero'),
-      (SEGUNDO, 'Segundo'),
-      (TERCERO, 'Tercero'),
-      (CUARTO, 'Cuarto'),
-      (QUINTO, 'Quinto'),
-  ]
+  # PRIMERO = '1'
+  # SEGUNDO = '2'
+  # TERCERO = '3'
+  # CUARTO = '4'
+  # QUINTO = '5'
+  # ORDER_DISPLAY = [
+  #     (PRIMERO, 'Primero'),
+  #     (SEGUNDO, 'Segundo'),
+  #     (TERCERO, 'Tercero'),
+  #     (CUARTO, 'Cuarto'),
+  #     (QUINTO, 'Quinto'),
+  # ]
   
   rule_service = models.ForeignKey(
     ServiceConfiguration,
@@ -480,10 +455,8 @@ class MainFormSection(models.Model):
 
   is_active = models.BooleanField('activo', default=False)
 
-  order_display = models.CharField(
+  order_display = models.IntegerField(
       'orden para mostrar', 
-      max_length=80, 
-      choices=ORDER_DISPLAY,
   )
 
   # user_id = models.CharField('modificado por', max_length=50, blank=True)
@@ -491,8 +464,8 @@ class MainFormSection(models.Model):
   # modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
 
   class Meta:
-    verbose_name = 'seccion principal y componentes form'
-    verbose_name_plural = 'secciones principales y componentes form'
+    verbose_name = 'seccion principal de formularios'
+    verbose_name_plural = 'sección principal de formularios'
     db_table = 'request_main_form_section'
 
   def __str__(self) -> str:
@@ -500,18 +473,18 @@ class MainFormSection(models.Model):
 
 class subsectionServiceForm(models.Model):
 
-  PRIMERO = '1'
-  SEGUNDO = '2'
-  TERCERO = '3'
-  CUARTO = '4'
-  QUINTO = '5'
-  ORDER_DISPLAY = [
-      (PRIMERO, 'Primero'),
-      (SEGUNDO, 'Segundo'),
-      (TERCERO, 'Tercero'),
-      (CUARTO, 'Cuarto'),
-      (QUINTO, 'Quinto'),
-  ]
+  # PRIMERO = '1'
+  # SEGUNDO = '2'
+  # TERCERO = '3'
+  # CUARTO = '4'
+  # QUINTO = '5'
+  # ORDER_DISPLAY = [
+  #     (PRIMERO, 'Primero'),
+  #     (SEGUNDO, 'Segundo'),
+  #     (TERCERO, 'Tercero'),
+  #     (CUARTO, 'Cuarto'),
+  #     (QUINTO, 'Quinto'),
+  # ]
 
   rule_service = models.ForeignKey(
     ServiceConfiguration,
@@ -536,15 +509,13 @@ class subsectionServiceForm(models.Model):
 
   is_active = models.BooleanField('activo', default=False)
 
-  order_display = models.CharField(
+  order_display = models.IntegerField(
       'orden para mostrar', 
-      max_length=80, 
-      choices=ORDER_DISPLAY,
   )
 
   class Meta:
-    verbose_name = 'componente y seccion form'
-    verbose_name_plural = 'componentes y secciones form'
+    verbose_name = 'subsección de sección principal de formulario'
+    verbose_name_plural = 'subsección de sección principal de formularios'
     db_table = 'request_section_component'
     unique_together = [['rule_service','subsection_service', 'section_main_form']]
 
@@ -599,20 +570,29 @@ class ComponentSubsection(models.Model):
     blank=True
   )
 
-  def get_key_head()->list:
-    key_head_all = ConfigVariable.objects.filter(group_variable='HDSOL', system_required=True)
-    key_body_all = ConfigVariable.objects.filter(group_variable='BDSOL')
-    list_key_head = [(key_head_all[i].code, 'HEAD'+' - '+key_head_all[i].description) for i in range(len(key_head_all))]
-    list_key_body = [(key_body_all[i].code, 'BODY'+' - '+key_body_all[i].description) for i in range(len(key_body_all))]
-    list_all_key = list_key_head + list_key_body
-    return sorted(list_all_key)
+  # def get_key_head()->list:
+  #   key_head_all = ConfigVariable.objects.filter(group_variable='HDSOL', system_required=True)
+  #   key_body_all = ConfigVariable.objects.filter(group_variable='BDSOL')
+  #   list_key_head = [(key_head_all[i].code, 'HEAD'+' - '+key_head_all[i].description) for i in range(len(key_head_all))]
+  #   list_key_body = [(key_body_all[i].code, 'BODY'+' - '+key_body_all[i].description) for i in range(len(key_body_all))]
+  #   list_all_key = list_key_head + list_key_body
+  #   return sorted(list_all_key)
 
-  key_head = models.CharField(
-    'key head',
-    max_length=10,
-    choices=get_key_head(),
-    blank=True
+  key_config = models.ForeignKey(
+    ConfigVariable,
+    on_delete=models.PROTECT, 
+    verbose_name='key config', 
+    null=True,
+    blank=True,
+    limit_choices_to={'group_variable': ('HDSOL','BDSOL')}
   )
+
+  # key_head = models.CharField(
+  #   'key head',
+  #   max_length=10,
+  #   choices=get_key_head(),
+  #   blank=True
+  # )
 
   order_display = models.IntegerField('orden despliegue', null=True)
   
@@ -624,66 +604,9 @@ class ComponentSubsection(models.Model):
   def __str__(self) -> str:
     return f'{self.description}'
 
-class ComponentMainForm(models.Model):
-
-  rule_main_form = models.ForeignKey(
-    MainFormSection,
-    verbose_name='Subsección de servicio',
-    on_delete=models.PROTECT
-  ) 
-
-  component = models.ForeignKey(
-    ComponentType,
-    verbose_name='componente',
-    on_delete=models.PROTECT
-  )
-
-  description = models.CharField('etiqueta del componente', max_length=255)
-
-  required = models.BooleanField('requerido', null=True) 
-
-  source = models.ForeignKey(
-    DataSource,
-    verbose_name='fuente de datos',
-    null=True,
-    on_delete=models.PROTECT
-  )
-
-  source_api = models.CharField(
-    'fuente de datos API',
-    max_length=2000,
-    null=True
-  )
-
-  def get_key_head()->list:
-    key_head_all = ConfigVariable.objects.filter(group_variable='HDSOL', system_required=True)
-    key_body_all = ConfigVariable.objects.filter(group_variable='BDSOL')
-    list_key_head = [(key_head_all[i].code, 'HEAD'+' - '+key_head_all[i].description) for i in range(len(key_head_all))]
-    list_key_body = [(key_body_all[i].code, 'BODY'+' - '+key_body_all[i].description) for i in range(len(key_body_all))]
-    list_all_key = list_key_head + list_key_body
-    return sorted(list_all_key)
-
-  key_head = models.CharField(
-    'key head',
-    max_length=10,
-    choices=get_key_head(),
-    blank=''  
-  )
-
-  order_display = models.IntegerField('orden despliegue', null=True)
-
-  
-  class Meta:
-    verbose_name = 'seccion principal y componente'
-    verbose_name_plural = 'secciones principales y componentes'
-    db_table = 'request_section_main_component'
-
-  def __str__(self) -> str:
-    return f'{self.rule_main_form}'
-
 class Priority(models.Model):
-  description = models.CharField('description', max_length=255)
-  priority_percentage = models.FloatField('porcentaje de prioridad', default=0.0)
+  description = models.CharField('description', max_length=255, unique=True)
+  priority_percentage = models.FloatField('porcentaje de prioridad', default=0.0, unique=True)
   color_priority = ColorField(default='#FF0000', verbose_name='Color de prioridad')
   user_id = models.CharField('modificado por', max_length=50, blank=True)
   created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
@@ -707,7 +630,7 @@ class ServiceConfigurationStatus(models.Model):
 
   status_request = models.ForeignKey(
     Status,
-    verbose_name='Estado de solicitud',
+    verbose_name='estado de solicitud',
     on_delete=models.CASCADE
   ) 
 
@@ -734,41 +657,6 @@ class ServiceConfigurationStatus(models.Model):
   def __str__(self) -> str:
     return f'{self.rule_service}'
 
-class ComponentAction(models.Model):
-
-  service_id = models.ForeignKey(
-    ServiceConfiguration, 
-    verbose_name='Servicio',
-    on_delete=models.PROTECT
-  )
-
-  service_component_group_id = models.ForeignKey(
-    MainSection, 
-    verbose_name='grupo de componentes', 
-    null=True,
-    on_delete=models.PROTECT
-  )
-
-  service_component_section_id = models.ForeignKey(
-    Subsection,
-    verbose_name='seccion de formularios',
-    null=True,
-    on_delete=models.PROTECT,
-  )
-  
-  # user_id = models.CharField('modificado por', max_length=50, blank=True)
-  created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
-  modified_at = models.DateTimeField('fecha de modicación', auto_now=True)
-
-  class Meta:
-    verbose_name = 'componente de acción formularios'
-    verbose_name_plural = 'componentes de acción formularios'
-    db_table = 'request_component_action'
-    unique_together = [['service_id', 'service_component_group_id', 'service_component_section_id']]
-
-  def __str__(self) -> str:
-    return f'{self.service_id}'
-
 class RequestHeader(models.Model):
   
   
@@ -777,6 +665,7 @@ class RequestHeader(models.Model):
       ('2', 'Físico'),
   ]
   id_usuario = models.CharField('identificador de usuario', max_length=60)
+  email_applicant = models.EmailField('correo del solicitante', blank=True, null=True)
   rule_service = models.ForeignKey(
     ServiceConfiguration,
     verbose_name='servicio configurado',
@@ -795,9 +684,14 @@ class RequestHeader(models.Model):
     on_delete=PROTECT
   )
 
-  term_code = models.CharField('periodo solicictud', max_length=12)
+  term_code = models.CharField(
+    'periodo solicictud', 
+    max_length=12, 
+    null=True, 
+    blank=True
+  )
 
-  estimated_date = models.DateTimeField(null=True)
+  estimated_date = models.DateField(null=True)
 
   document_type = models.CharField(
       'tipo de documento', 
@@ -826,14 +720,14 @@ class RequestHeader(models.Model):
     null=True
   )
 
-  reception_date = models.DateTimeField('fecha de recepción', auto_now_add=True)
-  delivery_date = models.DateTimeField('fecha de entrega',)
-  user_comment = models.TextField('comentario de usuario',)
-  comment_closing_status = models.TextField('comentario para cierre del servicio')
-  comment_intermediate_states = models.TextField('comentario para estados intermedios')
+  reception_date = models.DateField('fecha de recepción')
+  delivery_date = models.DateField('fecha de entrega',)
+  user_comment = models.TextField('comentario de usuario', null=True, blank=True)
+  comment_closing_status = models.TextField('comentario para cierre del servicio', null=True, blank=True)
+  comment_intermediate_states = models.TextField('comentario para estados intermedios', null=True, blank=True)
   data_origin = models.CharField('sistema origen de datos', max_length=60, default='SYSTEM INSTITUCIONAL')
   origin_code = models.CharField('código de origen', max_length=60, default='WEB')
-  date_status_change = models.DateTimeField('fecha de cambio de status')
+  date_status_change = models.DateField('fecha de cambio de status')
   entity = models.ForeignKey(
     Entity,
     verbose_name='campus',
@@ -846,7 +740,7 @@ class RequestHeader(models.Model):
 
   class Meta:
     verbose_name = 'gestión de la solicitud'
-    verbose_name_plural = 'gestión de las solicitudes'
+    verbose_name_plural = 'gestión de solicitudes'
     db_table = 'request_header'
     # unique_together = [['service_id', 'service_component_group_id', 'service_component_section_id']]
 
