@@ -174,3 +174,5 @@ CKEDITOR_CONFIGS = {
         'width': 'auto',
     },
 }
+
+ALLOWED_HOSTS = ['34.238.244.191']
