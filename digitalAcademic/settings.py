@@ -92,23 +92,23 @@ DATABASES = {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'digitalacademic',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
-    }
-
     # 'default': {
     #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': 'marvaju',
-    #     'USER': 'digital_proccess',
-    #     'PASSWORD': 'Maq.81091081',
+    #     'NAME': 'digitalacademic',
+    #     'USER': 'postgres',
+    #     'PASSWORD': 'postgres',
     #     'HOST': '127.0.0.1',
     #     'PORT': '5432',
     # }
+
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'digital_proccess',
+        'USER': 'marvaju',
+        'PASSWORD': 'Maq.81091081',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+    }
 }
 
 
